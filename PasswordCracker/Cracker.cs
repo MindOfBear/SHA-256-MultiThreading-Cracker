@@ -1,103 +1,87 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace PasswordCracker
 {
-    public class Cracker
+
+    class Cracker
     {
-        private int Max_Length;
-        private string Alphabet;
-        private string PasswordHash;
-        private TimeSpan Start_time;
+        string hashedPassword;
+        int passwordLength;
+        int numThreads;
 
-        private Label CrackedPasswordLabel;
-        private Label CrackedTimeLabel;
-
-        private ConcurrentDictionary<string, TimeSpan> CrackedPasswords = new ConcurrentDictionary<string, TimeSpan>();
-
-        public Cracker(int max_Length, string alphabet, string passwordHash, TimeSpan start_time, Label passwordLabel, Label timeLabel)
+        public Cracker(string hashedPassword, int passwordLength, int numThreads)
         {
-            Max_Length = max_Length;
-            Alphabet = alphabet;
-            PasswordHash = passwordHash;
-            Start_time = start_time;
-            CrackedPasswordLabel = passwordLabel;
-            CrackedTimeLabel = timeLabel;
+            this.hashedPassword = hashedPassword;
+            this.passwordLength = passwordLength;
+            this.numThreads = numThreads;
         }
 
-        public void RunMultiThread()
+        public void parallelBruteForceCrack(Label passwordLabel, TimeSpan start_time, Label timeLabel) // metoda pentru spargerea hash-ului 
         {
-            int numThreads = Environment.ProcessorCount;
-
-            Parallel.For(0, numThreads, i =>
+            char[] characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".ToCharArray();
+            List<Task> tasks = new List<Task>();
+            object lockObject = new object();
+            int attempts = 0;
+            long totalAttempts = (long)Math.Pow(characters.Length, this.passwordLength);
+            for (int i = 0; i < this.numThreads; i++)
             {
-                GeneratePasswords(i, numThreads);
-            });
-
-            UpdateUI();
-        }
-
-        public void RunSingleThread()
-        {
-            GeneratePasswords(0, 1);
-            UpdateUI();
-        }
-
-        private void GeneratePasswords(int start, int step)
-        {
-            StringBuilder sb = new StringBuilder(Max_Length);
-            Generate(sb, start, step);
-        }
-
-        private void Generate(StringBuilder sb, int start, int step)
-        {
-            if (sb.Length == Max_Length)
-            {
-                byte[] candidateBytes = Encoding.UTF8.GetBytes(sb.ToString());
-                using (SHA256 sha256 = SHA256.Create())
+                int threadIndex = i; // contor thread
+                string solution;
+                tasks.Add(Task.Run(() =>
                 {
-                    byte[] hashBytes = sha256.ComputeHash(candidateBytes);
-                    string hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
-
-                    if (hashString == PasswordHash)
+                    using (SHA256 sha256 = SHA256.Create())
                     {
-                        TimeSpan duration = DateTime.Now.TimeOfDay - Start_time;
-                        CrackedPasswords.TryAdd(sb.ToString(), duration);
+                        for (int j = threadIndex; j < totalAttempts; j += this.numThreads)
+                        {
+                            string permutation = GetPermutation(characters, this.passwordLength, j); // generam folosind permutari un sir de caractere de dimensiunea parolei
+                            byte[] bytes = Encoding.UTF8.GetBytes(permutation); // encodam sirul de caractere generat
+                            byte[] hash = sha256.ComputeHash(bytes); // generam sha-ul 
+                            string hashedAttempt = BitConverter.ToString(hash).Replace("-", "").ToLower(); // convertim in string sha-ul pentru al compara cu hash-ul primit din interfata
+
+                            lock (lockObject) // blocam executia pana cand thread-ul actual verifica daca a gasit solutie
+                            {
+                                attempts++;
+                                if (hashedAttempt == this.hashedPassword) // verificam daca s a gasit solutie
+                                {
+                                    if (passwordLabel.InvokeRequired)
+                                    {
+                                        passwordLabel.BeginInvoke((MethodInvoker)delegate () { passwordLabel.Text = permutation; });
+                                    }
+                                    TimeSpan duration = DateTime.Now.TimeOfDay - start_time;
+                                    string formatedDuration = duration.TotalSeconds.ToString();
+                                    if (timeLabel.InvokeRequired)
+                                    {
+                                        timeLabel.BeginInvoke((MethodInvoker)delegate () {
+                                            timeLabel.Text = formatedDuration;
+                                        });
+                                    }
+                                    break;
+                                }
+                            }
+                        }
                     }
-                }
+                }));
             }
-            else
-            {
-                for (int i = start; i < Alphabet.Length; i += step)
-                {
-                    sb.Append(Alphabet[i]);
-                    Generate(sb, 0, 1); // Recursive call with step = 1 to generate next character
-                    sb.Remove(sb.Length - 1, 1);
-                }
-            }
+
+            Task.WaitAll(tasks.ToArray()); // asteptam pana cand toate threaduriile termina executia
         }
 
-        private void UpdateUI()
+        static string GetPermutation(char[] characters, int length, long index) // metoda pentru a genera string-ul folosind alfabetul dat
         {
-            // Update UI with cracked password and time
-            foreach (var entry in CrackedPasswords)
-            {
-                CrackedPasswordLabel.Invoke(new MethodInvoker(delegate
-                {
-                    CrackedPasswordLabel.Text = $"{entry.Key}";
-                }));
+            StringBuilder permutation = new StringBuilder(length);
 
-                CrackedTimeLabel.Invoke(new MethodInvoker(delegate
-                {
-                    CrackedTimeLabel.Text = $"{entry.Value.TotalSeconds}s";
-                }));
+            for (int i = 0; i < length; i++)
+            {
+                int charIndex = (int)(index % characters.Length);
+                permutation.Append(characters[charIndex]);
+                index /= characters.Length;
             }
+
+            return permutation.ToString();
         }
     }
 }

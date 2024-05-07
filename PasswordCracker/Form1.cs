@@ -8,26 +8,26 @@ namespace PasswordCracker
 {
     public partial class mainWindow : Form
     {
-        private readonly string Alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ[];./!&@";
+        private readonly string Alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[];./!&@"; // definirea alfabetului folosit
         private int Max_Length = 0;
         private byte[] PasswordByte; // vector pentru stocarea bitiilor sirului sha256
 
         public mainWindow()
         {
             InitializeComponent();
-            string processorName = System.Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER");
-            int threadCount = Environment.ProcessorCount;
-            int coreCount = threadCount / 2;
+            string processorName = System.Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER"); // identificam arhitectura procesorului
+            int threadCount = Environment.ProcessorCount; // identificam numar-ul de core-uri
+            int coreCount = threadCount / 2; // numarul de thread-uri
 
-            cpuName.Text = processorName.Substring(0, Math.Min(processorName.Length, 8)); // Display only the first 8 characters of the processor name
+            cpuName.Text = processorName.Substring(0, Math.Min(processorName.Length, 8)); // afisam detaliile despre procesor
             cpuCores.Text = "Cores: " + coreCount.ToString();
             cpuThreads.Text = "Threads: " + threadCount.ToString();
 
         }
 
-        private void startBtn_Click(object sender, EventArgs e)
+        private void startBtn_Click(object sender, EventArgs e) // metoda care este triggeruita la apasarea butonului Start Cracking
         {
-            string password256Hash = passwordHash.Text;
+            string password256Hash = passwordHash.Text; // preluam hash-ul din interfata
             passwordLabel.Text = "-";
             timeLabel.Text = "-";
 
@@ -42,18 +42,17 @@ namespace PasswordCracker
             {
                 usedMultithreadingLabel.Text = "MultiThreading";
 
-                Task.Run(() =>
-                {
-                    Cracker cracker = new Cracker(Max_Length, Alphabet, password256Hash, start_time, passwordLabel, timeLabel);
-                    cracker.RunMultiThread();
-                });
+                int totalThreads = Environment.ProcessorCount;
+
+                Cracker cracker = new Cracker(password256Hash, Max_Length, totalThreads);
+                cracker.parallelBruteForceCrack(passwordLabel, start_time, timeLabel);
             }
             else
             {
-                usedMultithreadingLabel.Text = "SingleThreading";
-
-                Cracker cracker = new Cracker(Max_Length, Alphabet, password256Hash, start_time, passwordLabel, timeLabel);
-                cracker.RunSingleThread();
+                usedMultithreadingLabel.Text = "SingleThread";
+                int totalThreads = 1;
+                Cracker cracker = new Cracker(password256Hash, Max_Length, totalThreads);
+                cracker.parallelBruteForceCrack(passwordLabel, start_time, timeLabel);
             }
         }
     }
