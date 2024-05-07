@@ -42,8 +42,8 @@
             usedMultithreadingLabel = new Label();
             timeLabel = new Label();
             passwordLabel = new Label();
-            label7 = new Label();
             startBtn = new Button();
+            label7 = new Label();
             SuspendLayout();
             // 
             // cpuText
@@ -147,7 +147,7 @@
             // usedMultithreadingLabel
             // 
             usedMultithreadingLabel.AutoSize = true;
-            usedMultithreadingLabel.Location = new Point(486, 339);
+            usedMultithreadingLabel.Location = new Point(477, 339);
             usedMultithreadingLabel.Name = "usedMultithreadingLabel";
             usedMultithreadingLabel.RightToLeft = RightToLeft.Yes;
             usedMultithreadingLabel.Size = new Size(86, 15);
@@ -157,7 +157,7 @@
             // timeLabel
             // 
             timeLabel.AutoSize = true;
-            timeLabel.Location = new Point(507, 324);
+            timeLabel.Location = new Point(477, 324);
             timeLabel.Name = "timeLabel";
             timeLabel.RightToLeft = RightToLeft.Yes;
             timeLabel.Size = new Size(33, 15);
@@ -167,12 +167,22 @@
             // passwordLabel
             // 
             passwordLabel.AutoSize = true;
-            passwordLabel.Location = new Point(495, 309);
+            passwordLabel.Location = new Point(477, 309);
             passwordLabel.Name = "passwordLabel";
             passwordLabel.RightToLeft = RightToLeft.Yes;
             passwordLabel.Size = new Size(57, 15);
             passwordLabel.TabIndex = 12;
             passwordLabel.Text = "Password";
+            // 
+            // startBtn
+            // 
+            startBtn.Location = new Point(231, 309);
+            startBtn.Name = "startBtn";
+            startBtn.Size = new Size(130, 30);
+            startBtn.TabIndex = 15;
+            startBtn.Text = "Start Cracking";
+            startBtn.UseVisualStyleBackColor = true;
+            startBtn.Click += startBtn_Click;
             // 
             // label7
             // 
@@ -184,16 +194,6 @@
             label7.Size = new Size(95, 15);
             label7.TabIndex = 11;
             label7.Text = "Cracking Info";
-            // 
-            // startBtn
-            // 
-            startBtn.Location = new Point(231, 309);
-            startBtn.Name = "startBtn";
-            startBtn.Size = new Size(130, 30);
-            startBtn.TabIndex = 15;
-            startBtn.Text = "Start Cracking";
-            startBtn.UseVisualStyleBackColor = true;
-            startBtn.Click += startBtn_Click;
             // 
             // mainWindow
             // 
@@ -242,7 +242,7 @@
         private Label usedMultithreadingLabel;
         private Label timeLabel;
         private Label passwordLabel;
-        private Label label7;
         private Button startBtn;
+        private Label label7;
     }
 }
