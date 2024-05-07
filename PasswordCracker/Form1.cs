@@ -15,12 +15,21 @@ namespace PasswordCracker
         public mainWindow()
         {
             InitializeComponent();
+            string processorName = System.Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER");
+            int threadCount = Environment.ProcessorCount;
+            int coreCount = threadCount / 2;
+
+            cpuName.Text = processorName.Substring(0, Math.Min(processorName.Length, 8)); // Display only the first 8 characters of the processor name
+            cpuCores.Text = "Cores: " + coreCount.ToString();
+            cpuThreads.Text = "Threads: " + threadCount.ToString();
 
         }
 
         private void startBtn_Click(object sender, EventArgs e)
         {
             string password256Hash = passwordHash.Text;
+            passwordLabel.Text = "-";
+            timeLabel.Text = "-";
 
             if (int.TryParse(passwordLenght.Text, out int password_Length))
             {
@@ -35,7 +44,7 @@ namespace PasswordCracker
 
                 Task.Run(() =>
                 {
-                    Cracker cracker = new Cracker(Max_Length, Alphabet, password256Hash, start_time, cpuThreads);
+                    Cracker cracker = new Cracker(Max_Length, Alphabet, password256Hash, start_time, passwordLabel, timeLabel);
                     cracker.RunMultiThread();
                 });
             }
@@ -43,7 +52,7 @@ namespace PasswordCracker
             {
                 usedMultithreadingLabel.Text = "SingleThreading";
 
-                Cracker cracker = new Cracker(Max_Length, Alphabet, password256Hash, start_time, cpuThreads);
+                Cracker cracker = new Cracker(Max_Length, Alphabet, password256Hash, start_time, passwordLabel, timeLabel);
                 cracker.RunSingleThread();
             }
         }
