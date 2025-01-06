@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,26 +8,25 @@ namespace PasswordCracker
 {
     public partial class mainWindow : Form
     {
-        private readonly string Alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[];./!&@"; // definirea alfabetului folosit
+        private readonly string Alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[];./!&@"; // Setul de caractere utilizat
         private int Max_Length = 0;
-        private byte[] PasswordByte; // vector pentru stocarea bitiilor sirului sha256
 
         public mainWindow()
         {
             InitializeComponent();
-            string processorName = System.Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER"); // identificam arhitectura procesorului
-            int threadCount = Environment.ProcessorCount; // identificam numar-ul de core-uri
-            int coreCount = threadCount / 2; // numarul de thread-uri
 
-            cpuName.Text = processorName.Substring(0, Math.Min(processorName.Length, 8)); // afisam detaliile despre procesor
-            cpuCores.Text = "Cores: " + coreCount.ToString();
-            cpuThreads.Text = "Threads: " + threadCount.ToString();
+            // informatii hardware
+            string processorName = Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER");
+            int threadCount = Environment.ProcessorCount;
 
+            cpuName.Text = processorName.Substring(0, Math.Min(processorName.Length, 8));
+            cpuCores.Text = $"Cores: {threadCount / 2}";
+            cpuThreads.Text = $"Threads: {threadCount}";
         }
 
-        private void startBtn_Click(object sender, EventArgs e) // metoda care este triggeruita la apasarea butonului Start Cracking
+        private async void startBtn_Click(object sender, EventArgs e)
         {
-            string password256Hash = passwordHash.Text; // preluam hash-ul din interfata
+            string password256Hash = passwordHash.Text;
             passwordLabel.Text = "-";
             timeLabel.Text = "-";
 
@@ -35,25 +34,21 @@ namespace PasswordCracker
             {
                 Max_Length = password_Length;
             }
-
-            TimeSpan start_time = DateTime.Now.TimeOfDay;
-
-            if (multiThreading.Checked)
-            {
-                usedMultithreadingLabel.Text = "MultiThreading";
-
-                int totalThreads = Environment.ProcessorCount;
-
-                Cracker cracker = new Cracker(password256Hash, Max_Length, totalThreads);
-                cracker.parallelBruteForceCrack(passwordLabel, start_time, timeLabel);
-            }
             else
             {
-                usedMultithreadingLabel.Text = "SingleThread";
-                int totalThreads = 1;
-                Cracker cracker = new Cracker(password256Hash, Max_Length, totalThreads);
-                cracker.parallelBruteForceCrack(passwordLabel, start_time, timeLabel);
+                MessageBox.Show("Invalid password lenght");
+                return;
             }
+
+            TimeSpan startTime = DateTime.Now.TimeOfDay;
+
+            bool useMultithreading = multiThreading.Checked;
+            usedMultithreadingLabel.Text = useMultithreading ? "MultiThreading" : "SingleThread";
+
+            int totalThreads = useMultithreading ? Environment.ProcessorCount : 1;
+
+            Cracker cracker = new Cracker(password256Hash, Max_Length, totalThreads);
+            await cracker.BruteForceCrackAsync(passwordLabel, startTime, timeLabel);
         }
     }
 }
